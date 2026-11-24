@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PAI TEACHER – SMART ADMINISTRATION (MTs)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 900: '#09192F', 800: '#0F294A', 700: '#163A68', 600: '#1E4E8C' },
+            emerald: { 600: '#059669', 500: '#10B981', 50: '#ECFDF5' },
+            teal: { 600: '#0D9488', 500: '#14B8A6' }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            arabic: ['"Amiri"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .islamic-pattern {
+      background-color: #0F294A;
+      background-image: radial-gradient(rgba(20, 184, 166, 0.14) 1.5px, transparent 1.5px), radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, #0F294A 1.5px);
+      background-size: 32px 32px;
+      background-position: 0 0, 16px 16px;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      #main-content { margin-left: 0 !important; padding: 0 !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+    <div id="toast-box" class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium bg-navy-800 border border-teal-500/30">
+      <span id="toast-msg">Berhasil disimpan</span>
+    </div>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="min-h-screen islamic-pattern flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-teal-500/20">
+      <div class="bg-navy-800 p-6 text-center text-white relative">
+        <p class="font-arabic text-2xl text-teal-400 mb-1">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</p>
+        <h1 class="text-xl font-bold tracking-tight">PAI TEACHER</h1>
+        <p class="text-xs text-teal-300 uppercase tracking-widest mt-0.5">Smart Administration • MTs Kelas VII–IX</p>
+      </div>
+      <form id="login-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username</label>
+          <input type="text" id="login-user" value="admin" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm" placeholder="Masukkan username" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+          <input type="password" id="login-pass" value="pai123" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm" placeholder="••••••••" />
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-slate-600">
+          <strong>Login Default:</strong> <code>admin</code> / <code>pai123</code><br>
+          <span id="login-mode-badge" class="text-teal-700 font-semibold">Mode: Lokal (Hubungkan URL GAS di Pengaturan untuk Sync Google Sheets)</span>
+        </div>
+        <button type="submit" class="w-full bg-navy-800 hover:bg-navy-700 text-white font-semibold py-2.5 rounded-lg transition flex items-center justify-center gap-2 shadow-md">
+          <i data-lucide="log-in" class="w-4 h-4 text-teal-400"></i> Masuk ke Aplikasi
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP SHELL -->
+  <div id="app-shell" class="hidden min-h-screen flex">
+    <!-- SIDEBAR BACKDROP (MOBILE) -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+    <!-- SIDEBAR (17 MENU UTAMA) -->
+    <aside id="sidebar" class="no-print fixed lg:static inset-y-0 left-0 z-40 w-68 bg-navy-800 text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col w-64 shrink-0">
+      <div class="p-4 border-b border-navy-700 flex items-center justify-between">
+        <div>
+          <span class="text-xs text-teal-400 font-bold tracking-wider">MTs KELAS VII–IX</span>
+          <h2 class="font-bold text-base leading-tight">PAI SMART ADMIN</h2>
+        </div>
+        <button onclick="toggleSidebar()" class="lg:hidden text-slate-300 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5 text-xs font-medium">
+        <!-- Menu dirender oleh JS -->
+      </nav>
+
+      <div class="p-3 border-t border-navy-700 text-xs">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-slate-300 truncate" id="sidebar-user-name">Guru PAI MTs</span>
+          <span id="sync-indicator" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300">Lokal</span>
+        </div>
+        <button onclick="logout()" class="w-full py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="flex-1 flex flex-col min-w-0">
+      <!-- TOP BAR -->
+      <header class="no-print bg-white border-b border-slate-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-navy-800 hover:bg-slate-100">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <h1 id="page-title" class="text-base lg:text-lg font-bold text-navy-800">Dashboard</h1>
+            <p id="page-subtitle" class="text-xs text-slate-500 hidden sm:block">Ringkasan Administrasi Pembelajaran PAI MTs</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="syncFromCloud()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-teal-700 hover:bg-emerald-100 border border-teal-200 flex items-center gap-1.5 transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Sinkron Sheet</span>
+          </button>
+          <button onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-navy-800 text-white hover:bg-navy-700 flex items-center gap-1.5 transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-teal-400"></i> <span class="hidden sm:inline">Cetak / PDF</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- DYNAMIC VIEW CONTAINER -->
+      <main id="view-container" class="p-4 lg:p-6 flex-1 max-w-7xl w-full mx-auto">
+        <!-- Konten aktif dirender di sini -->
+      </main>
+    </div>
+  </div>
+
+  <!-- UNIVERSAL MODAL FOR CRUD -->
+  <div id="crud-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="bg-navy-800 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 id="modal-title" class="font-bold text-sm">Tambah Data</h3>
+        <button onclick="closeModal()" class="text-slate-300 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="modal-form" class="p-5 overflow-y-auto space-y-3 text-sm">
+        <!-- Dynamic form fields -->
+      </form>
+    </div>
+  </div>
+
+<script>
+/**
+ * ============================================================================
+ * KONFIGURASI & STATE APLIKASI PAI TEACHER SMART ADMINISTRATION
+ * ============================================================================
+ */
+const MENUS = [
+  { id: 'dashboard', label: '1. Dashboard', icon: 'layout-dashboard', sub: 'Ringkasan statistik & aktivitas mengajar' },
+  { id: 'profil', label: '2. Profil Guru & Sekolah', icon: 'school', sub: 'Identitas madrasah, kepala madrasah, & guru PAI' },
+  { id: 'siswa', label: '3. Data Siswa (VII–IX)', icon: 'users', sub: 'Database peserta didik MTs kelas VII, VIII, dan IX' },
+  { id: 'absensi', label: '4. Absensi Siswa', icon: 'calendar-check', sub: 'Presensi harian & rekap otomatis per kelas' },
+  { id: 'jadwal', label: '5. Jadwal Mengajar', icon: 'clock', sub: 'Jadwal tatap muka PAI kelas VII–IX' },
+  { id: 'kurikulum', label: '6. Kurikulum (CP, TP, ATP)', icon: 'compass', sub: 'Pemetaan Fase D Kurikulum Merdeka PAI MTs' },
+  { id: 'materi', label: '7. Materi Ajar PAI', icon: 'book-open', sub: 'Bahan ajar, dalil Al-Qur\'an/Hadis, & media' },
+  { id: 'perangkat', label: '8. Perangkat Pembelajaran', icon: 'file-text', sub: 'Modul Ajar / RPP & LKPD terintegrasi Google Docs' },
+  { id: 'penilaian', label: '9. Asesmen & Penilaian', icon: 'award', sub: 'Nilai Kognitif, Baca Al-Qur\'an, Tahfidz & Praktik Ibadah' },
+  { id: 'bank_soal', label: '10. Bank Soal PAI', icon: 'help-circle', sub: 'Koleksi soal formatif, sumatif, & HOTS PAI' },
+  { id: 'jurnal', label: '11. Jurnal Mengajar', icon: 'edit-3', sub: 'Catatan harian KBM & refleksi pembelajaran' },
+  { id: 'keagamaan', label: '12. Kegiatan Keagamaan', icon: 'moon', sub: 'Program IMTAQ, BIMTAQ, Tahfidz & PHBI' },
+  { id: 'rapor', label: '13. Rapor & Pelaporan', icon: 'file-spreadsheet', sub: 'Leger nilai akhir PAI & deskripsi capaian otomatis' },
+  { id: 'supervisi', label: '14. Supervisi Akademik', icon: 'check-square', sub: 'Instrumen & catatan supervisi Kepala Madrasah' },
+  { id: 'ai_generator', label: '15. AI Generator PAI', icon: 'sparkles', sub: 'Buat Modul Ajar, Soal HOTS, Kisi-kisi & LKPD otomatis' },
+  { id: 'arsip', label: '16. Arsip Digital', icon: 'folder-archive', sub: 'Tautan dokumen Google Docs & berkas administrasi' },
+  { id: 'pengaturan', label: '17. Pengaturan & Backup', icon: 'settings', sub: 'Koneksi Google Sheets, API Gemini, & Backup/Restore' }
+];
+
+const DEFAULT_DB = {
+  Profil_Sekolah: [{
+    ID: 'PRF-001', Nama_Madrasah: 'MTs Al-Ikhlas Nusantara', NSM_NPSN: '121232010045 / 20278910',
+    Alamat: 'Jl. Madrasah No. 12', Nama_Kepala: 'Drs. H. Mahmudin, M.Pd.I', NIP_Kepala: '197004121998031002',
+    Nama_Guru: 'Ust. Ahmad Fauzan, S.Pd.I', NIP_Guru: '198907102019031004', Tahun_Ajaran: '2026/2027', Semester: 'Ganjil'
+  }],
+  Siswa: [
+    { ID: 'SIS-1', NISN: '0091234501', Nama_Siswa: 'Aisyah Putri Ramadhani', Kelas: 'VII-A', JK: 'P', Nama_Wali: 'Budi Santoso', No_HP: '081234567890', Status: 'Aktif' },
+    { ID: 'SIS-2', NISN: '0091234502', Nama_Siswa: 'Muhammad Fatih Al-Ghazali', Kelas: 'VII-A', JK: 'L', Nama_Wali: 'Hendra Wijaya', No_HP: '081234567891', Status: 'Aktif' },
+    { ID: 'SIS-3', NISN: '0081234503', Nama_Siswa: 'Zahra Nabila Khairunnisa', Kelas: 'VIII-A', JK: 'P', Nama_Wali: 'Slamet Riyadi', No_HP: '081234567892', Status: 'Aktif' },
+    { ID: 'SIS-4', NISN: '0071234504', Nama_Siswa: 'Ahmad Zaki Mubarrak', Kelas: 'IX-A', JK: 'L', Nama_Wali: 'Suryadi', No_HP: '081234567893', Status: 'Aktif' }
+  ],
+  Absensi: [
+    { ID: 'ABS-1', Tanggal: new Date().toISOString().slice(0,10), Kelas: 'VII-A', NISN: '0091234501', Nama_Siswa: 'Aisyah Putri Ramadhani', Status: 'H', Keterangan: '' },
+    { ID: 'ABS-2', Tanggal: new Date().toISOString().slice(0,10), Kelas: 'VII-A', NISN: '0091234502', Nama_Siswa: 'Muhammad Fatih Al-Ghazali', Status: 'H', Keterangan: '' }
+  ],
+  Jadwal: [
+    { ID: 'JDW-1', Hari: 'Senin', Jam_Ke: '1-3', Waktu: '07.30 - 09.30', Kelas: 'VII-A', Mata_Pelajaran: 'PAI & Budi Pekerti', Ruang: 'R.01' },
+    { ID: 'JDW-2', Hari: 'Selasa', Jam_Ke: '1-3', Waktu: '07.30 - 09.30', Kelas: 'VIII-A', Mata_Pelajaran: 'PAI & Budi Pekerti', Ruang: 'R.04' },
+    { ID: 'JDW-3', Hari: 'Rabu', Jam_Ke: '4-6', Waktu: '10.00 - 12.00', Kelas: 'IX-A', Mata_Pelajaran: 'PAI & Budi Pekerti', Ruang: 'R.07' }
+  ],
+  Kurikulum: [
+    { ID: 'KUR-1', Kelas: 'VII', Elemen_PAI: 'Al-Qur\'an dan Hadis', CP: 'Peserta didik memahami definisi Al-Qur\'an dan Hadis Nabi dan posisinya sebagai sumber ajaran agama Islam.', TP: 'Membaca Q.S. an-Nisa/4: 59 dan Q.S. an-Nahl/16: 64 sesuai kaidah tajwid (Alif Lam Syamsiyah & Qamariyah).', ATP: '7.1.1 Mengidentifikasi hukum bacaan -> 7.1.2 Mendemonstrasikan bacaan tartil.', Alokasi_JP: '6 JP' }
+  ],
+  Materi: [
+    { ID: 'MAT-1', Kelas: 'VII', Bab_Materi: 'Bab 1: Al-Qur\'an dan Sunah sebagai Pedoman Hidup', Ringkasan: 'Kedudukan Al-Qur\'an sebagai sumber hukum pertama dan Sunah sebagai sumber kedua serta hukum bacaan Alif Lam.', Dalil_Rujukan: 'Q.S. An-Nisa/4: 59 & Q.S. An-Nahl/16: 64', Tautan_Media: 'https://quran.kemenag.go.id' }
+  ],
+  Perangkat: [
+    { ID: 'PRG-1', Jenis: 'Modul Ajar / RPP', Kelas: 'VII', Topik: 'Hukum Bacaan Alif Lam Syamsiyah & Qamariyah', Tujuan_Pembelajaran: 'Siswa mampu membedakan dan melafalkan bacaan Alif Lam dengan tartil.', Langkah_Kegiatan: 'Pendahuluan (10m), Inti: Talaqqi & Diskusi Kelompok (60m), Penutup (10m)', Asesmen: 'Tes Praktik Membaca Al-Qur\'an' }
+  ],
+  Penilaian: [
+    { ID: 'NIL-1', Semester: 'Ganjil', Kelas: 'VII-A', NISN: '0091234501', Nama_Siswa: 'Aisyah Putri Ramadhani', Formatif: 88, Sumatif: 90, Baca_Quran: 92, Hafalan_Tahfidz: 95, Praktik_Ibadah: 90, Nilai_Akhir: 91 },
+    { ID: 'NIL-2', Semester: 'Ganjil', Kelas: 'VII-A', NISN: '0091234502', Nama_Siswa: 'Muhammad Fatih Al-Ghazali', Formatif: 82, Sumatif: 84, Baca_Quran: 85, Hafalan_Tahfidz: 80, Praktik_Ibadah: 86, Nilai_Akhir: 83 }
+  ],
+  Bank_Soal: [
+    { ID: 'SOL-1', Kelas: 'VII', Materi: 'Al-Qur\'an & Hadis', Level_Kognitif: 'C3 (Penerapan)', Jenis_Soal: 'Pilihan Ganda', Pertanyaan: 'Perhatikan lafaz وَالشَّمْسِ. Hukum bacaan Alif Lam pada lafaz tersebut adalah...', Opsi_Jawaban: 'A. Alif Lam Qamariyah | B. Alif Lam Syamsiyah | C. Idgham Bighunnah | D. Ikhfa Haqiqi', Kunci: 'B' }
+  ],
+  Jurnal: [
+    { ID: 'JUR-1', Tanggal: new Date().toISOString().slice(0,10), Kelas: 'VII-A', Jam_Ke: '1-3', Materi_TP: 'Membaca Q.S. An-Nisa: 59 dengan Tajwid', Jml_Hadir: 2, Jml_Tidak_Hadir: 0, Refleksi: 'Siswa antusias mempraktikkan bacaan secara berpasangan.' }
+  ],
+  Keagamaan: [
+    { ID: 'KGM-1', Tanggal: new Date().toISOString().slice(0,10), Jenis_Kegiatan: 'Shalat Dhuha & Tadarus Pagi', Peserta: 'Seluruh Siswa Kelas VII–IX', Pembina: 'Tim Guru PAI', Capaian_Catatan: 'Terlaksana tertib di mushalla madrasah, khatam Juz 30.' }
+  ],
+  Supervisi: [
+    { ID: 'SUP-1', Tanggal: new Date().toISOString().slice(0,10), Supervisor: 'Drs. H. Mahmudin, M.Pd.I', Aspek_Dinilai: 'Kelengkapan Modul Ajar & Pelaksanaan KBM', Skor: '92 (Amat Baik)', Tindak_Lanjut: 'Pertahankan integrasi media digital dalam pembelajaran.' }
+  ],
+  Arsip: [
+    { ID: 'ARS-1', Tanggal: new Date().toISOString().slice(0,10), Kategori: 'Kurikulum', Judul_Dokumen: 'ATP PAI Fase D Kelas VII-IX', Link_Google_Docs: 'https://docs.google.com' }
+  ]
+};
+
+let state = {
+  currentMenu: 'dashboard',
+  user: JSON.parse(localStorage.getItem('pai_user') || 'null'),
+  gasUrl: localStorage.getItem('pai_gas_url') || '',
+  geminiKey: localStorage.getItem('pai_gemini_key') || '',
+  db: JSON.parse(localStorage.getItem('pai_db') || 'null') || structuredClone(DEFAULT_DB),
+  chartInstance: null
+};
+
+function saveLocalDB() {
+  localStorage.setItem('pai_db', JSON.stringify(state.db));
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  const box = document.getElementById('toast-box');
+  document.getElementById('toast-msg').textContent = msg;
+  box.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${isError ? 'bg-red-600' : 'bg-navy-800 border border-teal-400'}`;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+/**
+ * ============================================================================
+ * KOMUNIKASI API GOOGLE APPS SCRIPT (CORS-SAFE POST)
+ * ============================================================================
+ */
+async function apiCall(payload) {
+  if (!state.gasUrl) return null;
+  try {
+    const res = await fetch(state.gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('GAS API Error:', err);
+    showToast('Gagal terhubung ke Google Sheets (Mode Lokal aktif)', true);
+    return null;
+  }
+}
+
+async function syncFromCloud() {
+  if (!state.gasUrl) {
+    showToast('Masukkan URL Google Apps Script di menu Pengaturan terlebih dahulu.', true);
+    return;
+  }
+  showToast('Menyinkronkan data dari Google Sheets...');
+  const res = await apiCall({ action: 'getAll' });
+  if (res && res.status === 'success') {
+    Object.keys(res.data).forEach(k => {
+      if (Array.isArray(res.data[k])) state.db[k] = res.data[k];
+    });
+    saveLocalDB();
+    renderCurrentView();
+    showToast('Data berhasil disinkronkan dari Google Sheets!');
+  }
+}
+
+/**
+ * ============================================================================
+ * AUTENTIKASI & NAVIGASI
+ * ============================================================================
+ */
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+
+  if (state.gasUrl) {
+    const res = await apiCall({ action: 'login', username: u, password: p });
+    if (res && res.status === 'success') {
+      state.user = res.user;
+      localStorage.setItem('pai_user', JSON.stringify(res.user));
+      initApp();
+      syncFromCloud();
+      return;
+    } else if (res && res.status === 'error') {
+      showToast(res.message, true);
+      return;
+    }
+  }
+
+  if (u === 'admin' && p === 'pai123') {
+    state.user = { ID: 'USR-001', Username: 'admin', Nama_Lengkap: state.db.Profil_Sekolah[0]?.Nama_Guru || 'Guru PAI MTs', Role: 'Admin' };
+    localStorage.setItem('pai_user', JSON.stringify(state.user));
+    initApp();
+  } else {
+    showToast('Username atau password salah! (Default: admin / pai123)', true);
+  }
+});
+
+function logout() {
+  localStorage.removeItem('pai_user');
+  state.user = null;
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  document.getElementById('sidebar-backdrop').classList.toggle('hidden');
+}
+
+function initApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('sidebar-user-name').textContent = state.user.Nama_Lengkap;
+  updateSyncBadge();
+  renderSidebar();
+  navigate('dashboard');
+}
+
+function updateSyncBadge() {
+  const badge = document.getElementById('sync-indicator');
+  if (state.gasUrl) {
+    badge.textContent = 'Cloud Sheet';
+    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300';
+  } else {
+    badge.textContent = 'Mode Lokal';
+    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300';
+  }
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = MENUS.map(m => {
+    const active = state.currentMenu === m.id;
+    return `
+      <button onclick="navigate('${m.id}')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition ${active ? 'bg-teal-600 text-white font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-700 hover:text-white'}">
+        <i data-lucide="${m.icon}" class="w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-teal-400'}"></i>
+        <span class="truncate">${m.label}</span>
+      </button>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+function navigate(menuId) {
+  state.currentMenu = menuId;
+  const menuObj = MENUS.find(m => m.id === menuId);
+  document.getElementById('page-title').textContent = menuObj.label.replace(/^\d+\.\s/, '');
+  document.getElementById('page-subtitle').textContent = menuObj.sub;
+  renderSidebar();
+  renderCurrentView();
+  if (window.innerWidth < 1024) {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebar-backdrop').classList.add('hidden');
+  }
+}
+
+/**
+ * ============================================================================
+ * ROUTER TAMPILAN UTAMA (17 MENU)
+ * ============================================================================
+ */
+function renderCurrentView() {
+  const container = document.getElementById('view-container');
+  switch (state.currentMenu) {
+    case 'dashboard': renderDashboard(container); break;
+    case 'profil': renderProfil(container); break;
+    case 'siswa': renderSiswa(container); break;
+    case 'absensi': renderAbsensi(container); break;
+    case 'penilaian': renderPenilaian(container); break;
+    case 'rapor': renderRapor(container); break;
+    case 'ai_generator': renderAIGenerator(container); break;
+    case 'pengaturan': renderPengaturan(container); break;
+    default: renderGenericCrud(container, state.currentMenu); break;
+  }
+  lucide.createIcons();
+}
+
+/* 1. DASHBOARD */
+function renderDashboard(el) {
+  const siswa = state.db.Siswa || [];
+  const k7 = siswa.filter(s => String(s.Kelas).startsWith('VII') && !String(s.Kelas).startsWith('VIII')).length;
+  const k8 = siswa.filter(s => String(s.Kelas).startsWith('VIII')).length;
+  const k9 = siswa.filter(s => String(s.Kelas).startsWith('IX')).length;
+  const today = new Date().toISOString().slice(0, 10);
+  const absToday = (state.db.Absensi || []).filter(a => a.Tanggal === today);
+  const hadirToday = absToday.filter(a => a.Status === 'H').length;
+  const nilaiList = state.db.Penilaian || [];
+  const avgNilai = nilaiList.length ? Math.round(nilaiList.reduce((acc, n) => acc + Number(n.Nilai_Akhir || 0), 0) / nilaiList.length) : 0;
+
+  el.innerHTML = `
+    <div class="space-y-6">
+      <!-- Banner Islami -->
+      <div class="islamic-pattern rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <p class="text-teal-300 text-xs font-semibold uppercase tracking-wider">Assalamu'alaikum Warahmatullahi Wabarakatuh</p>
+          <h2 class="text-xl lg:text-2xl font-bold mt-1">${state.db.Profil_Sekolah[0]?.Nama_Guru || 'Guru PAI MTs'}</h2>
+          <p class="text-slate-300 text-xs mt-1">${state.db.Profil_Sekolah[0]?.Nama_Madrasah || ''} • Tahun Ajaran ${state.db.Profil_Sekolah[0]?.Tahun_Ajaran || '2026/2027'} (Semester ${state.db.Profil_Sekolah[0]?.Semester || 'Ganjil'})</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="navigate('absensi')" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i> Input Absensi
+          </button>
+          <button onclick="navigate('jurnal')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+            <i data-lucide="edit-3" class="w-4 h-4"></i> Isi Jurnal
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Total Siswa (VII–IX)</span>
+            <span class="p-2 bg-navy-800/10 text-navy-800 rounded-lg"><i data-lucide="users" class="w-4 h-4"></i></span>
+          </div>
+          <p class="text-2xl font-bold text-navy-800 mt-2">${siswa.length} <span class="text-xs font-normal text-slate-500">Siswa</span></p>
+          <p class="text-xs text-teal-600 font-medium mt-1">VII: ${k7} • VIII: ${k8} • IX: ${k9}</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Kehadiran Hari Ini</span>
+            <span class="p-2 bg-emerald-50 text-teal-600 rounded-lg"><i data-lucide="user-check" class="w-4 h-4"></i></span>
+          </div>
+          <p class="text-2xl font-bold text-navy-800 mt-2">${hadirToday} <span class="text-xs font-normal text-slate-500">/ ${absToday.length} Tercatat</span></p>
+          <p class="text-xs text-slate-500 mt-1">Tanggal: ${today}</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Rata-Rata Nilai PAI</span>
+            <span class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="award" class="w-4 h-4"></i></span>
+          </div>
+          <p class="text-2xl font-bold text-navy-800 mt-2">${avgNilai}</p>
+          <p class="text-xs text-teal-600 font-medium mt-1">Kognitif + Praktik & Tahfidz</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Jurnal & Bank Soal</span>
+            <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="book-open" class="w-4 h-4"></i></span>
+          </div>
+          <p class="text-2xl font-bold text-navy-800 mt-2">${(state.db.Jurnal || []).length} <span class="text-xs font-normal text-slate-500">Jurnal</span></p>
+          <p class="text-xs text-slate-500 mt-1">${(state.db.Bank_Soal || []).length} Butir Soal Tersimpan</p>
+        </div>
+      </div>
+
+      <!-- Grafik & Jadwal -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+          <h3 class="font-bold text-sm text-navy-800 mb-3">Grafik Sebaran Siswa & Capaian Rata-Rata PAI</h3>
+          <div class="h-60"><canvas id="dashboardChart"></canvas></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm text-navy-800">Jadwal Mengajar</h3>
+            <button onclick="navigate('jadwal')" class="text-xs text-teal-600 font-semibold hover:underline">Lihat Semua</button>
+          </div>
+          <div class="space-y-2.5">
+            ${(state.db.Jadwal || []).slice(0, 5).map(j => `
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-bold text-navy-800">${j.Hari} • Kelas ${j.Kelas}</p>
+                  <p class="text-[11px] text-slate-500">${j.Mata_Pelajaran} (${j.Waktu})</p>
+                </div>
+                <span class="px-2 py-1 text-[10px] font-bold bg-teal-50 text-teal-700 rounded-lg">Jam ${j.Jam_Ke}</span>
+              </div>
+            `).join('') || '<p class="text-xs text-slate-400">Belum ada jadwal.</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const ctx = document.getElementById('dashboardChart');
+  if (ctx) {
+    if (state.chartInstance) state.chartInstance.destroy();
+    state.chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Kelas VII', 'Kelas VIII', 'Kelas IX'],
+        datasets: [
+          { label: 'Jumlah Siswa', data: [k7, k8, k9], backgroundColor: '#0F294A', borderRadius: 6 },
+          { label: 'Rata-rata Nilai PAI', data: [avgNilai, avgNilai, avgNilai], backgroundColor: '#0D9488', borderRadius: 6 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+}
+
+/* 2. PROFIL GURU & SEKOLAH */
+function renderProfil(el) {
+  const p = state.db.Profil_Sekolah[0] || {};
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-3xl">
+      <h3 class="font-bold text-base text-navy-800 mb-4 border-b pb-2">Identitas Madrasah & Guru Pengampu PAI</h3>
+      <form id="profil-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Nama Madrasah (MTs)</label><input name="Nama_Madrasah" value="${p.Nama_Madrasah || ''}" required class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">NSM / NPSN</label><input name="NSM_NPSN" value="${p.NSM_NPSN || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div class="md:col-span-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Madrasah</label><input name="Alamat" value="${p.Alamat || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Nama Kepala Madrasah</label><input name="Nama_Kepala" value="${p.Nama_Kepala || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">NIP Kepala Madrasah</label><input name="NIP_Kepala" value="${p.NIP_Kepala || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Nama Guru PAI</label><input name="Nama_Guru" value="${p.Nama_Guru || ''}" required class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">NIP / NUPTK Guru</label><input name="NIP_Guru" value="${p.NIP_Guru || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Tahun Ajaran</label><input name="Tahun_Ajaran" value="${p.Tahun_Ajaran || '2026/2027'}" class="w-full px-3 py-2 border rounded-lg"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Semester</label>
+          <select name="Semester" class="w-full px-3 py-2 border rounded-lg">
+            <option ${p.Semester === 'Ganjil' ? 'selected' : ''}>Ganjil</option>
+            <option ${p.Semester === 'Genap' ? 'selected' : ''}>Genap</option>
+          </select>
+        </div>
+        <div class="md:col-span-2 pt-2">
+          <button type="submit" class="px-5 py-2.5 bg-navy-800 hover:bg-navy-700 text-white font-semibold rounded-xl text-xs flex items-center gap-2">
+            <i data-lucide="save" class="w-4 h-4 text-teal-400"></i> Simpan Profil
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.getElementById('profil-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = Object.fromEntries(new FormData(e.target).entries());
+    fd.ID = p.ID || 'PRF-001';
+    state.db.Profil_Sekolah[0] = fd;
+    saveLocalDB();
+    await apiCall({ action: 'update', sheet: 'Profil_Sekolah', id: fd.ID, data: fd });
+    showToast('Profil Guru & Madrasah berhasil diperbarui!');
+  };
+}
+
+/* 3. DATA SISWA (KELAS VII-IX) */
+function renderSiswa(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <input id="search-siswa" oninput="filterSiswaTable()" placeholder="Cari nama / NISN..." class="px-3 py-2 border rounded-xl text-xs w-48 sm:w-64">
+          <select id="filter-kelas-siswa" onchange="filterSiswaTable()" class="px-3 py-2 border rounded-xl text-xs">
+            <option value="">Semua Kelas (VII–IX)</option>
+            <option value="VII">Kelas VII</option>
+            <option value="VIII">Kelas VIII</option>
+            <option value="IX">Kelas IX</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="exportSheetExcel('Siswa', 'Data_Siswa_PAI_MTs')" class="px-3 py-2 bg-emerald-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Excel
+          </button>
+          <button onclick="openSiswaModal()" class="px-4 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-teal-400"></i> Tambah Siswa
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-navy-800 text-white">
+              <th class="p-3 rounded-tl-lg">NISN</th>
+              <th class="p-3">Nama Lengkap</th>
+              <th class="p-3">Kelas</th>
+              <th class="p-3">L/P</th>
+              <th class="p-3">Nama Wali</th>
+              <th class="p-3">No. HP</th>
+              <th class="p-3 rounded-tr-lg text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="siswa-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  filterSiswaTable();
+}
+
+function filterSiswaTable() {
+  const q = (document.getElementById('search-siswa')?.value || '').toLowerCase();
+  const k = document.getElementById('filter-kelas-siswa')?.value || '';
+  const filtered = (state.db.Siswa || []).filter(s => {
+    const matchQ = String(s.Nama_Siswa).toLowerCase().includes(q) || String(s.NISN).includes(q);
+    const matchK = !k || (k === 'VII' ? (String(s.Kelas).startsWith('VII') && !String(s.Kelas).startsWith('VIII')) : String(s.Kelas).startsWith(k));
+    return matchQ && matchK;
+  });
+
+  document.getElementById('siswa-tbody').innerHTML = filtered.map(s => `
+    <tr class="hover:bg-slate-50">
+      <td class="p-3 font-mono">${s.NISN}</td>
+      <td class="p-3 font-semibold text-navy-800">${s.Nama_Siswa}</td>
+      <td class="p-3"><span class="px-2 py-0.5 bg-teal-50 text-teal-700 font-bold rounded">${s.Kelas}</span></td>
+      <td class="p-3">${s.JK}</td>
+      <td class="p-3">${s.Nama_Wali || '-'}</td>
+      <td class="p-3">${s.No_HP || '-'}</td>
+      <td class="p-3 text-center space-x-1">
+        <button onclick="openSiswaModal('${s.ID}')" class="px-2 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100">Edit</button>
+        <button onclick="deleteRecord('Siswa', '${s.ID}')" class="px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Hapus</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada data siswa.</td></tr>';
+}
+
+function openSiswaModal(id = null) {
+  const item = id ? state.db.Siswa.find(x => x.ID === id) : {};
+  document.getElementById('modal-title').textContent = id ? 'Edit Data Siswa' : 'Tambah Siswa Baru';
+  document.getElementById('modal-form').innerHTML = `
+    <div><label class="block text-xs font-semibold mb-1">NISN</label><input name="NISN" value="${item.NISN || ''}" required class="w-full px-3 py-2 border rounded-lg"></div>
+    <div><label class="block text-xs font-semibold mb-1">Nama Lengkap Siswa</label><input name="Nama_Siswa" value="${item.Nama_Siswa || ''}" required class="w-full px-3 py-2 border rounded-lg"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="block text-xs font-semibold mb-1">Kelas (mis. VII-A, VIII-B, IX-A)</label><input name="Kelas" value="${item.Kelas || 'VII-A'}" required class="w-full px-3 py-2 border rounded-lg"></div>
+      <div><label class="block text-xs font-semibold mb-1">Jenis Kelamin</label>
+        <select name="JK" class="w-full px-3 py-2 border rounded-lg">
+          <option value="L" ${item.JK === 'L' ? 'selected' : ''}>Laki-laki (L)</option>
+          <option value="P" ${item.JK === 'P' ? 'selected' : ''}>Perempuan (P)</option>
+        </select>
+      </div>
+    </div>
+    <div><label class="block text-xs font-semibold mb-1">Nama Orang Tua / Wali</label><input name="Nama_Wali" value="${item.Nama_Wali || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+    <div><label class="block text-xs font-semibold mb-1">No. HP Wali</label><input name="No_HP" value="${item.No_HP || ''}" class="w-full px-3 py-2 border rounded-lg"></div>
+    <div class="flex justify-end gap-2 pt-3">
+      <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg text-xs">Batal</button>
+      <button type="submit" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-xs font-semibold">Simpan Data</button>
+    </div>
+  `;
+  document.getElementById('crud-modal').classList.remove('hidden');
+  document.getElementById('modal-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    data.Status = 'Aktif';
+    await saveRecord('Siswa', id, data);
+    closeModal();
+    filterSiswaTable();
+  };
+}
+
+/* 4. ABSENSI SISWA & REKAP OTOMATIS */
+function renderAbsensi(el) {
+  const classes = [...new Set((state.db.Siswa || []).map(s => s.Kelas))];
+  if (!classes.length) classes.push('VII-A');
+  const today = new Date().toISOString().slice(0, 10);
+
+  el.innerHTML = `
+    <div class="space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+          <div class="flex flex-wrap gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Pertemuan</label>
+              <input type="date" id="abs-tanggal" value="${today}" onchange="loadAbsensiForm()" class="px-3 py-2 border rounded-xl text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label>
+              <select id="abs-kelas" onchange="loadAbsensiForm()" class="px-3 py-2 border rounded-xl text-xs">
+                ${classes.map(c => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="setAllHadir()" class="px-3 py-2 bg-emerald-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-semibold">Tandai Hadir Semua</button>
+            <button onclick="saveAbsensiBatch()" class="px-4 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5 text-teal-400"></i> Simpan Absensi
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-navy-800 text-white">
+                <th class="p-3 rounded-tl-lg">NISN</th>
+                <th class="p-3">Nama Siswa</th>
+                <th class="p-3">Status Kehadiran</th>
+                <th class="p-3 rounded-tr-lg">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="absensi-form-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  loadAbsensiForm();
+}
+
+function loadAbsensiForm() {
+  const tgl = document.getElementById('abs-tanggal').value;
+  const kls = document.getElementById('abs-kelas').value;
+  const siswaKelas = (state.db.Siswa || []).filter(s => s.Kelas === kls);
+  const existing = (state.db.Absensi || []).filter(a => a.Tanggal === tgl && a.Kelas === kls);
+
+  document.getElementById('absensi-form-tbody').innerHTML = siswaKelas.map(s => {
+    const rec = existing.find(e => e.NISN === s.NISN) || { Status: 'H', Keterangan: '' };
+    return `
+      <tr data-nisn="${s.NISN}" data-nama="${s.Nama_Siswa}" data-id="${rec.ID || ''}">
+        <td class="p-3 font-mono">${s.NISN}</td>
+        <td class="p-3 font-semibold text-navy-800">${s.Nama_Siswa}</td>
+        <td class="p-3">
+          <select class="abs-status px-2.5 py-1.5 border rounded-lg font-semibold">
+            <option value="H" ${rec.Status === 'H' ? 'selected' : ''}>Hadir (H)</option>
+            <option value="S" ${rec.Status === 'S' ? 'selected' : ''}>Sakit (S)</option>
+            <option value="I" ${rec.Status === 'I' ? 'selected' : ''}>Izin (I)</option>
+            <option value="A" ${rec.Status === 'A' ? 'selected' : ''}>Alpa (A)</option>
+          </select>
+        </td>
+        <td class="p-3"><input type="text" class="abs-ket w-full px-2.5 py-1.5 border rounded-lg" value="${rec.Keterangan || ''}" placeholder="Catatan opsional..."></td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada siswa di kelas ini.</td></tr>';
+}
+
+function setAllHadir() {
+  document.querySelectorAll('.abs-status').forEach(sel => sel.value = 'H');
+}
+
+async function saveAbsensiBatch() {
+  const tgl = document.getElementById('abs-tanggal').value;
+  const kls = document.getElementById('abs-kelas').value;
+  const rows = document.querySelectorAll('#absensi-form-tbody tr[data-nisn]');
+  const records = [];
+
+  rows.forEach(tr => {
+    const id = tr.dataset.id || ('ABS-' + tgl + '-' + tr.dataset.nisn);
+    const rec = {
+      ID: id, Tanggal: tgl, Kelas: kls,
+      NISN: tr.dataset.nisn, Nama_Siswa: tr.dataset.nama,
+      Status: tr.querySelector('.abs-status').value,
+      Keterangan: tr.querySelector('.abs-ket').value
+    };
+    records.push(rec);
+    const idx = state.db.Absensi.findIndex(x => x.ID === id);
+    if (idx >= 0) state.db.Absensi[idx] = rec;
+    else state.db.Absensi.push(rec);
+  });
+
+  saveLocalDB();
+  await apiCall({ action: 'bulkUpsert', sheet: 'Absensi', records });
+  showToast(`Absensi kelas ${kls} tanggal ${tgl} berhasil disimpan!`);
+}
+
+/* 9. ASESMEN & PENILAIAN PAI (KOGNITIF + AL-QUR'AN + TAHFIDZ + IBADAH) */
+function renderPenilaian(el) {
+  const classes = [...new Set((state.db.Siswa || []).map(s => s.Kelas))];
+  if (!classes.length) classes.push('VII-A');
+
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <select id="nil-kelas" onchange="loadPenilaianTable()" class="px-3 py-2 border rounded-xl text-xs font-semibold">
+            ${classes.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <span class="text-xs text-slate-500">Bobot otomatis: Rata-rata 5 aspek penilaian PAI</span>
+        </div>
+        <button onclick="savePenilaianBatch()" class="px-4 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="save" class="w-3.5 h-3.5 text-teal-400"></i> Simpan Semua Nilai
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-navy-800 text-white">
+              <th class="p-3 rounded-tl-lg">Nama Siswa</th>
+              <th class="p-2 text-center">Formatif</th>
+              <th class="p-2 text-center">Sumatif</th>
+              <th class="p-2 text-center bg-teal-700">Baca Al-Qur'an</th>
+              <th class="p-2 text-center bg-teal-700">Hafalan/Tahfidz</th>
+              <th class="p-2 text-center bg-teal-700">Praktik Ibadah</th>
+              <th class="p-3 text-center rounded-tr-lg">Nilai Akhir</th>
+            </tr>
+          </thead>
+          <tbody id="penilaian-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  loadPenilaianTable();
+}
+
+function loadPenilaianTable() {
+  const kls = document.getElementById('nil-kelas').value;
+  const sem = state.db.Profil_Sekolah[0]?.Semester || 'Ganjil';
+  const siswaList = (state.db.Siswa || []).filter(s => s.Kelas === kls);
+
+  document.getElementById('penilaian-tbody').innerHTML = siswaList.map(s => {
+    const n = (state.db.Penilaian || []).find(p => p.NISN === s.NISN && p.Kelas === kls) || {
+      Formatif: 80, Sumatif: 80, Baca_Quran: 85, Hafalan_Tahfidz: 85, Praktik_Ibadah: 85, Nilai_Akhir: 83
+    };
+    return `
+      <tr data-nisn="${s.NISN}" data-nama="${s.Nama_Siswa}" data-id="${n.ID || ''}">
+        <td class="p-3 font-semibold text-navy-800">${s.Nama_Siswa}<br><span class="text-[10px] font-mono text-slate-400">${s.NISN}</span></td>
+        <td class="p-2 text-center"><input type="number" min="0" max="100" value="${n.Formatif}" oninput="recalcRow(this)" class="nil-in w-16 px-2 py-1 border rounded text-center"></td>
+        <td class="p-2 text-center"><input type="number" min="0" max="100" value="${n.Sumatif}" oninput="recalcRow(this)" class="nil-in w-16 px-2 py-1 border rounded text-center"></td>
+        <td class="p-2 text-center"><input type="number" min="0" max="100" value="${n.Baca_Quran}" oninput="recalcRow(this)" class="nil-in w-16 px-2 py-1 border border-teal-300 rounded text-center"></td>
+        <td class="p-2 text-center"><input type="number" min="0" max="100" value="${n.Hafalan_Tahfidz}" oninput="recalcRow(this)" class="nil-in w-16 px-2 py-1 border border-teal-300 rounded text-center"></td>
+        <td class="p-2 text-center"><input type="number" min="0" max="100" value="${n.Praktik_Ibadah}" oninput="recalcRow(this)" class="nil-in w-16 px-2 py-1 border border-teal-300 rounded text-center"></td>
+        <td class="p-3 text-center font-bold text-sm text-teal-700 nil-akhir">${n.Nilai_Akhir}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function recalcRow(input) {
+  const tr = input.closest('tr');
+  const vals = [...tr.querySelectorAll('.nil-in')].map(i => Number(i.value || 0));
+  const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  tr.querySelector('.nil-akhir').textContent = avg;
+}
+
+async function savePenilaianBatch() {
+  const kls = document.getElementById('nil-kelas').value;
+  const sem = state.db.Profil_Sekolah[0]?.Semester || 'Ganjil';
+  const rows = document.querySelectorAll('#penilaian-tbody tr[data-nisn]');
+  const records = [];
+
+  rows.forEach(tr => {
+    const inputs = tr.querySelectorAll('.nil-in');
+    const id = tr.dataset.id || ('NIL-' + sem + '-' + tr.dataset.nisn);
+    const rec = {
+      ID: id, Semester: sem, Kelas: kls, NISN: tr.dataset.nisn, Nama_Siswa: tr.dataset.nama,
+      Formatif: Number(inputs[0].value), Sumatif: Number(inputs[1].value),
+      Baca_Quran: Number(inputs[2].value), Hafalan_Tahfidz: Number(inputs[3].value),
+      Praktik_Ibadah: Number(inputs[4].value), Nilai_Akhir: Number(tr.querySelector('.nil-akhir').textContent)
+    };
+    records.push(rec);
+    const idx = state.db.Penilaian.findIndex(x => x.ID === id);
+    if (idx >= 0) state.db.Penilaian[idx] = rec;
+    else state.db.Penilaian.push(rec);
+  });
+
+  saveLocalDB();
+  await apiCall({ action: 'bulkUpsert', sheet: 'Penilaian', records });
+  showToast('Seluruh nilai kognitif & praktik ibadah PAI berhasil disimpan!');
+}
+
+/* 13. RAPOR & PELAPORAN */
+function renderRapor(el) {
+  const profil = state.db.Profil_Sekolah[0] || {};
+  const nilai = state.db.Penilaian || [];
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <div>
+          <h3 class="font-bold text-base text-navy-800">Leger & Capaian Kompetensi PAI (${profil.Nama_Madrasah || 'MTs'})</h3>
+          <p class="text-xs text-slate-500">Tahun Ajaran ${profil.Tahun_Ajaran || ''} • Semester ${profil.Semester || ''}</p>
+        </div>
+        <div class="flex gap-2 no-print">
+          <button onclick="exportSheetExcel('Penilaian', 'Leger_Rapor_PAI')" class="px-3 py-2 bg-emerald-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-semibold">Ekspor Excel</button>
+          <button onclick="exportRaporToDocs()" class="px-3 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold">Buat Google Docs</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-navy-800 text-white">
+              <th class="p-3">NISN</th>
+              <th class="p-3">Nama Siswa</th>
+              <th class="p-3">Kelas</th>
+              <th class="p-3 text-center">Nilai Akhir</th>
+              <th class="p-3 text-center">Predikat</th>
+              <th class="p-3">Deskripsi Capaian Otomatis</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${nilai.map(n => {
+              const na = Number(n.Nilai_Akhir || 0);
+              const pred = na >= 90 ? 'A (Sangat Baik)' : na >= 80 ? 'B (Baik)' : na >= 70 ? 'C (Cukup)' : 'D (Perlu Bimbingan)';
+              const desc = `Ananda ${n.Nama_Siswa} menunjukkan penguasaan ${na >= 85 ? 'sangat baik' : 'baik'} dalam memahami materi PAI, kelancaran membaca Al-Qur'an (skor ${n.Baca_Quran}), hafalan tahfidz (${n.Hafalan_Tahfidz}), serta praktik ibadah (${n.Praktik_Ibadah}).`;
+              return `
+                <tr>
+                  <td class="p-3 font-mono">${n.NISN}</td>
+                  <td class="p-3 font-semibold text-navy-800">${n.Nama_Siswa}</td>
+                  <td class="p-3">${n.Kelas}</td>
+                  <td class="p-3 text-center font-bold text-teal-700">${na}</td>
+                  <td class="p-3 text-center font-semibold">${pred}</td>
+                  <td class="p-3 text-slate-600">${desc}</td>
+                </tr>
+              `;
+            }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai untuk direkap.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function exportRaporToDocs() {
+  if (!state.gasUrl) return showToast('Hubungkan Google Apps Script terlebih dahulu di Pengaturan.', true);
+  showToast('Membuat dokumen Google Docs di Drive Anda...');
+  const rows = [['NISN', 'Nama Siswa', 'Kelas', 'Nilai Akhir', 'Baca Quran', 'Tahfidz', 'Praktik Ibadah']];
+  (state.db.Penilaian || []).forEach(n => rows.push([String(n.NISN), n.Nama_Siswa, n.Kelas, String(n.Nilai_Akhir), String(n.Baca_Quran), String(n.Hafalan_Tahfidz), String(n.Praktik_Ibadah)]));
+  const res = await apiCall({
+    action: 'exportDoc',
+    title: 'Rekap Leger Rapor PAI MTs - ' + new Date().toLocaleDateString('id-ID'),
+    category: 'Rapor & Pelaporan',
+    sections: [{ heading: 'Rekapitulasi Nilai Akhir PAI', table: rows }]
+  });
+  if (res && res.status === 'success') {
+    showToast('Berhasil! Dokumen Google Docs dibuat.');
+    window.open(res.url, '_blank');
+  }
+}
+
+/* 15. AI GENERATOR PAI */
+function renderAIGenerator(el) {
+  el.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h3 class="font-bold text-sm text-navy-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-teal-600"></i> Parameter AI PAI</h3>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Jenis Perangkat / Konten</label>
+          <select id="ai-jenis" class="w-full px-3 py-2 border rounded-xl text-xs">
+            <option value="Modul Ajar / RPP Kurikulum Merdeka">Modul Ajar / RPP Kurikulum Merdeka</option>
+            <option value="Materi Ajar Ringkas & Dalil Al-Qur'an">Materi Ajar Ringkas & Dalil Al-Qur'an</option>
+            <option value="5 Soal HOTS Pilihan Ganda & Kunci Jawaban">5 Soal HOTS PG & Kunci Jawaban</option>
+            <option value="Kisi-Kisi Penilaian Sumatif">Kisi-Kisi Penilaian Sumatif</option>
+            <option value="Lembar Kerja Peserta Didik (LKPD)">Lembar Kerja Peserta Didik (LKPD)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Jenjang Kelas MTs</label>
+          <select id="ai-kelas" class="w-full px-3 py-2 border rounded-xl text-xs">
+            <option value="VII">Kelas VII MTs</option>
+            <option value="VIII">Kelas VIII MTs</option>
+            <option value="IX">Kelas IX MTs</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Topik / Bab Materi PAI</label>
+          <input id="ai-topik" placeholder="Contoh: Sujud Sahwi, Tilawah, dan Syukur" class="w-full px-3 py-2 border rounded-xl text-xs">
+        </div>
+        <button onclick="runAIGenerator()" class="w-full py-2.5 bg-navy-800 hover:bg-navy-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="wand-2" class="w-4 h-4 text-teal-400"></i> Generate Otomatis
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-navy-800">Hasil Generator AI</h3>
+          <div class="flex gap-2">
+            <button onclick="saveAIResultToDB()" class="px-3 py-1.5 bg-emerald-50 text-teal-700 border border-teal-200 rounded-lg text-xs font-semibold">Simpan ke Database</button>
+            <button onclick="exportAIToDocs()" class="px-3 py-1.5 bg-navy-800 text-white rounded-lg text-xs font-semibold">Ekspor ke Google Docs</button>
+          </div>
+        </div>
+        <textarea id="ai-output" rows="16" class="w-full flex-1 p-4 border rounded-xl text-xs leading-relaxed font-sans bg-slate-50" placeholder="Hasil generasi materi, modul ajar, LKPD, atau soal PAI akan muncul di sini..."></textarea>
+      </div>
+    </div>
+  `;
+}
+
+async function runAIGenerator() {
+  const jenis = document.getElementById('ai-jenis').value;
+  const kelas = document.getElementById('ai-kelas').value;
+  const topik = document.getElementById('ai-topik').value.trim();
+  if (!topik) return showToast('Masukkan topik materi PAI terlebih dahulu.', true);
+
+  const prompt = `Bertindaklah sebagai Guru Senior Pendidikan Agama Islam (PAI) MTs Kurikulum Merdeka. Buatkan ${jenis} untuk Kelas ${kelas} MTs dengan topik "${topik}". Sertakan dalil ayat Al-Qur'an atau Hadis yang relevan beserta terjemahannya, terstruktur rapi dalam Bahasa Indonesia yang baku dan mudah dipahami siswa MTs.`;
+
+  const out = document.getElementById('ai-output');
+  out.value = 'Sedang menyusun ' + jenis + ' untuk topik "' + topik + '"... Mohon tunggu...';
+
+  if (state.gasUrl && state.geminiKey) {
+    const res = await apiCall({ action: 'generateAI', apiKey: state.geminiKey, prompt });
+    if (res && res.status === 'success') {
+      out.value = res.text;
+      showToast('Konten PAI berhasil dibuat oleh AI!');
+      return;
+    }
+  }
+
+  // Template struktur siap pakai jika API Key Gemini belum dipasang
+  out.value = `=== ${jenis.toUpperCase()} ===\nJenjang: MTs Kelas ${kelas}\nTopik: ${topik}\n\n1. CAPAIAN & TUJUAN PEMBELAJARAN:\nPeserta didik mampu memahami konsep ${topik}, menganalisis dalil naqli yang mendasarinya, serta mempraktikkannya dalam kehidupan sehari-hari.\n\n2. DALIL RUJUKAN:\nQ.S. Al-Baqarah / Surat terkait sesuai topik ${topik}.\n\n3. RINGKASAN MATERI & AKTIVITAS SISWA:\n- Pendahuluan: Apersepsi & tadarus bersama.\n- Kegiatan Inti: Eksplorasi dalil, diskusi kelompok studi kasus, dan praktik langsung.\n- Penutup: Refleksi nilai akhlak mulia & asesmen formatif.\n\n(Tips: Masukkan Gemini API Key Anda di menu 17. Pengaturan untuk generasi AI penuh secara otomatis).`;
+  showToast('Template tersusun! Pasang Gemini API Key di Pengaturan untuk generasi AI penuh.');
+}
+
+async function saveAIResultToDB() {
+  const topik = document.getElementById('ai-topik').value || 'Materi PAI AI';
+  const kelas = document.getElementById('ai-kelas').value;
+  const jenis = document.getElementById('ai-jenis').value;
+  const text = document.getElementById('ai-output').value;
+  if (!text) return;
+
+  await saveRecord('Perangkat', null, {
+    Jenis: jenis, Kelas: kelas, Topik: topik,
+    Tujuan_Pembelajaran: 'Hasil AI Generator PAI',
+    Langkah_Kegiatan: text.substring(0, 500), Asesmen: 'Terlampir'
+  });
+  showToast('Hasil AI berhasil disimpan ke Perangkat Pembelajaran!');
+}
+
+async function exportAIToDocs() {
+  const topik = document.getElementById('ai-topik').value || 'Perangkat PAI';
+  const text = document.getElementById('ai-output').value;
+  if (!state.gasUrl) return showToast('Hubungkan URL Google Apps Script di Pengaturan terlebih dahulu.', true);
+  const res = await apiCall({
+    action: 'exportDoc',
+    title: 'AI PAI - ' + topik,
+    category: 'AI Generator PAI',
+    sections: [{ heading: topik, content: text }]
+  });
+  if (res && res.status === 'success') {
+    showToast('Dokumen Google Docs berhasil dibuat!');
+    window.open(res.url, '_blank');
+  }
+}
+
+/* 17. PENGATURAN & BACKUP */
+function renderPengaturan(el) {
+  el.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <h3 class="font-bold text-base text-navy-800 border-b pb-2">Integrasi Cloud (Google Sheets & Gemini AI)</h3>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">URL Web App Google Apps Script</label>
+          <input id="cfg-gas-url" value="${state.gasUrl}" placeholder="https://script.google.com/macros/s/...../exec" class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Gemini API Key (Opsional untuk AI Generator)</label>
+          <input type="password" id="cfg-gemini-key" value="${state.geminiKey}" placeholder="AIzaSy..." class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
+        </div>
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button onclick="saveSettings()" class="px-4 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold">Simpan Pengaturan</button>
+          <button onclick="initCloudDatabase()" class="px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-semibold">Inisialisasi 14 Tab Google Sheet</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <h3 class="font-bold text-base text-navy-800 border-b pb-2">Backup & Pemulihan Database</h3>
+        <p class="text-xs text-slate-500">Unduh seluruh data administrasi dalam format JSON untuk cadangan atau pulihkan dari file backup sebelumnya.</p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="downloadBackupJSON()" class="px-4 py-2.5 bg-emerald-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i> Download Backup (.JSON)
+          </button>
+          <label class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="upload" class="w-4 h-4"></i> Pulihkan Backup (.JSON)
+            <input type="file" accept=".json" onchange="restoreBackupJSON(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettings() {
+  state.gasUrl = document.getElementById('cfg-gas-url').value.trim();
+  state.geminiKey = document.getElementById('cfg-gemini-key').value.trim();
+  localStorage.setItem('pai_gas_url', state.gasUrl);
+  localStorage.setItem('pai_gemini_key', state.geminiKey);
+  updateSyncBadge();
+  showToast('Pengaturan integrasi berhasil disimpan!');
+}
+
+async function initCloudDatabase() {
+  saveSettings();
+  if (!state.gasUrl) return showToast('Isi URL Google Apps Script terlebih dahulu.', true);
+  showToast('Membuat struktur 14 sheet di Google Spreadsheet...');
+  const res = await apiCall({ action: 'init' });
+  if (res && res.status === 'success') {
+    showToast(res.message);
+    syncFromCloud();
+  }
+}
+
+function downloadBackupJSON() {
+  const blob = new Blob([JSON.stringify(state.db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Backup_PAI_Teacher_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+}
+
+function restoreBackupJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      state.db = parsed;
+      saveLocalDB();
+      showToast('Database berhasil dipulihkan dari file backup!');
+    } catch {
+      showToast('Format file backup tidak valid.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/**
+ * ============================================================================
+ * UNIVERSAL CRUD ENGINE UNTUK MODUL-MODUL ADMINISTRASI LAINNYA
+ * ============================================================================
+ */
+const MODULE_CONFIG = {
+  jadwal: { sheet: 'Jadwal', fields: ['Hari', 'Jam_Ke', 'Waktu', 'Kelas', 'Mata_Pelajaran', 'Ruang'] },
+  kurikulum: { sheet: 'Kurikulum', fields: ['Kelas', 'Elemen_PAI', 'CP', 'TP', 'ATP', 'Alokasi_JP'] },
+  materi: { sheet: 'Materi', fields: ['Kelas', 'Bab_Materi', 'Ringkasan', 'Dalil_Rujukan', 'Tautan_Media'] },
+  perangkat: { sheet: 'Perangkat', fields: ['Jenis', 'Kelas', 'Topik', 'Tujuan_Pembelajaran', 'Langkah_Kegiatan', 'Asesmen'] },
+  bank_soal: { sheet: 'Bank_Soal', fields: ['Kelas', 'Materi', 'Level_Kognitif', 'Jenis_Soal', 'Pertanyaan', 'Opsi_Jawaban', 'Kunci'] },
+  jurnal: { sheet: 'Jurnal', fields: ['Tanggal', 'Kelas', 'Jam_Ke', 'Materi_TP', 'Jml_Hadir', 'Jml_Tidak_Hadir', 'Refleksi'] },
+  keagamaan: { sheet: 'Keagamaan', fields: ['Tanggal', 'Jenis_Kegiatan', 'Peserta', 'Pembina', 'Capaian_Catatan'] },
+  supervisi: { sheet: 'Supervisi', fields: ['Tanggal', 'Supervisor', 'Aspek_Dinilai', 'Skor', 'Tindak_Lanjut'] },
+  arsip: { sheet: 'Arsip', fields: ['Tanggal', 'Kategori', 'Judul_Dokumen', 'Link_Google_Docs'] }
+};
+
+function renderGenericCrud(el, menuKey) {
+  const cfg = MODULE_CONFIG[menuKey];
+  const rows = state.db[cfg.sheet] || [];
+
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-xs font-semibold text-slate-500">Total: ${rows.length} Entri</span>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="exportGenericToDocs('${cfg.sheet}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-navy-800 rounded-xl text-xs font-semibold">Ekspor Google Docs</button>
+          <button onclick="exportSheetExcel('${cfg.sheet}', '${cfg.sheet}_PAI')" class="px-3 py-2 bg-emerald-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-semibold">Excel</button>
+          <button onclick="openGenericModal('${menuKey}')" class="px-4 py-2 bg-navy-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-teal-400"></i> Tambah Data
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-navy-800 text-white">
+              ${cfg.fields.map(f => `<th class="p-3">${f.replace(/_/g, ' ')}</th>`).join('')}
+              <th class="p-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${rows.map(r => `
+              <tr class="hover:bg-slate-50">
+                ${cfg.fields.map(f => {
+                  const val = r[f] || '-';
+                  if (String(val).startsWith('http')) return `<td class="p-3"><a href="${val}" target="_blank" class="text-teal-600 underline font-semibold">Buka Tautan</a></td>`;
+                  return `<td class="p-3 max-w-xs truncate" title="${val}">${val}</td>`;
+                }).join('')}
+                <td class="p-3 text-center whitespace-nowrap space-x-1">
+                  <button onclick="openGenericModal('${menuKey}', '${r.ID}')" class="px-2 py-1 bg-amber-50 text-amber-700 rounded">Edit</button>
+                  <button onclick="deleteRecord('${cfg.sheet}', '${r.ID}')" class="px-2 py-1 bg-red-50 text-red-600 rounded">Hapus</button>
+                </td>
+              </tr>
+            `).join('') || `<tr><td colspan="${cfg.fields.length + 1}" class="p-4 text-center text-slate-400">Belum ada data tersimpan.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openGenericModal(menuKey, id = null) {
+  const cfg = MODULE_CONFIG[menuKey];
+  const item = id ? state.db[cfg.sheet].find(x => x.ID === id) : {};
+  document.getElementById('modal-title').textContent = (id ? 'Edit ' : 'Tambah ') + cfg.sheet.replace(/_/g, ' ');
+  document.getElementById('modal-form').innerHTML = cfg.fields.map(f => {
+    const isDate = f === 'Tanggal';
+    const isLong = ['CP', 'TP', 'ATP', 'Ringkasan', 'Langkah_Kegiatan', 'Pertanyaan', 'Refleksi', 'Capaian_Catatan', 'Tindak_Lanjut'].includes(f);
+    return `
+      <div>
+        <label class="block text-xs font-semibold mb-1">${f.replace(/_/g, ' ')}</label>
+        ${isLong
+          ? `<textarea name="${f}" rows="3" class="w-full px-3 py-2 border rounded-lg">${item[f] || ''}</textarea>`
+          : `<input type="${isDate ? 'date' : 'text'}" name="${f}" value="${item[f] || (isDate ? new Date().toISOString().slice(0,10) : '')}" required class="w-full px-3 py-2 border rounded-lg">`
+        }
+      </div>
+    `;
+  }).join('') + `
+    <div class="flex justify-end gap-2 pt-3">
+      <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg text-xs">Batal</button>
+      <button type="submit" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-xs font-semibold">Simpan</button>
+    </div>
+  `;
+  document.getElementById('crud-modal').classList.remove('hidden');
+  document.getElementById('modal-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    await saveRecord(cfg.sheet, id, data);
+    closeModal();
+    renderCurrentView();
+  };
+}
+
+async function saveRecord(sheetName, id, data) {
+  if (id) {
+    data.ID = id;
+    const idx = state.db[sheetName].findIndex(x => x.ID === id);
+    if (idx >= 0) state.db[sheetName][idx] = data;
+    saveLocalDB();
+    await apiCall({ action: 'update', sheet: sheetName, id, data });
+    showToast('Data berhasil diperbarui!');
+  } else {
+    data.ID = sheetName.substring(0, 3).toUpperCase() + '-' + Date.now();
+    state.db[sheetName].push(data);
+    saveLocalDB();
+    await apiCall({ action: 'create', sheet: sheetName, data });
+    showToast('Data baru berhasil ditambahkan!');
+  }
+}
+
+async function deleteRecord(sheetName, id) {
+  if (!confirm('Yakin ingin menghapus data ini?')) return;
+  state.db[sheetName] = state.db[sheetName].filter(x => x.ID !== id);
+  saveLocalDB();
+  await apiCall({ action: 'delete', sheet: sheetName, id });
+  renderCurrentView();
+  showToast('Data dihapus.');
+}
+
+async function exportGenericToDocs(sheetName) {
+  if (!state.gasUrl) return showToast('Hubungkan URL Google Apps Script di Pengaturan terlebih dahulu.', true);
+  const rowsData = state.db[sheetName] || [];
+  if (!rowsData.length) return showToast('Tidak ada data untuk diekspor.', true);
+  const headers = Object.keys(rowsData[0]).filter(k => k !== 'ID');
+  const table = [headers, ...rowsData.map(r => headers.map(h => String(r[h] || '')))];
+  showToast('Membuat Google Docs...');
+  const res = await apiCall({
+    action: 'exportDoc',
+    title: 'Laporan ' + sheetName.replace(/_/g, ' ') + ' PAI MTs',
+    category: sheetName,
+    sections: [{ heading: 'Data ' + sheetName.replace(/_/g, ' '), table }]
+  });
+  if (res && res.status === 'success') {
+    showToast('Dokumen Google Docs berhasil dibuat!');
+    window.open(res.url, '_blank');
+  }
+}
+
+function exportSheetExcel(sheetName, filename) {
+  const ws = XLSX.utils.json_to_sheet(state.db[sheetName] || []);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename + '.xlsx');
+}
+
+function closeModal() {
+  document.getElementById('crud-modal').classList.add('hidden');
+}
+
+// Auto-login jika sesi masih tersimpan
+if (state.user) initApp();
+</script>
+</body>
+</html>
