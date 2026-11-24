@@ -237,7 +237,7 @@ const DEFAULT_DB = {
 let state = {
   currentMenu: 'dashboard',
   user: JSON.parse(localStorage.getItem('pai_user') || 'null'),
-  gasUrl: localStorage.getItem('pai_gas_url') || '',
+  gasUrl: localStorage.getItem('pai_gas_url') || 'https://script.google.com/macros/s/AKfycbwu21Jm-GWzsEJkleso04RMen4OuqqLpAYCtS0e3TMcavmWooThd_RtRv78HsRyyUAJ/exec',
   geminiKey: localStorage.getItem('pai_gemini_key') || '',
   db: JSON.parse(localStorage.getItem('pai_db') || 'null') || structuredClone(DEFAULT_DB),
   chartInstance: null
